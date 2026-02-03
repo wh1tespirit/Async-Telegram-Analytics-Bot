@@ -175,8 +175,6 @@ TestBot/
 │   │   └── query_service.py    # 🎯 Главный сервис
 │   └── storage/
 │       └── config.py           # ⚙️ Конфигурация
-├── docker-compose.yml          # 🐳 Docker конфигурация
-├── Dockerfile                  # 🐳 Образ приложения
 ├── requirements.txt            # 📦 Зависимости
 └── .env                        # 🔐 Переменные окружения
 ```
