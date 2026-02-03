@@ -1,0 +1,6 @@
+aiogram
+sqlalchemy
+asyncpg
+python-dotenv
+openai
+ijson
