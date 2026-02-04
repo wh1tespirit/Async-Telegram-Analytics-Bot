@@ -64,7 +64,7 @@ User Answer
 - created_at (TIMESTAMP WITH TIME ZONE) - время замера (раз в час)
 - updated_at (TIMESTAMP WITH TIME ZONE) - дата обновления записи
 
-#### КРИТИЧЕСКИЕ ПРАВИЛА
+### КРИТИЧЕСКИЕ ПРАВИЛА
 
 1. **Ответ должен содержать ТОЛЬКО SQL-запрос** - без markdown, без кавычек, без объяснений
 2. **Запрос ОБЯЗАН возвращать РОВНО ОДНО ЧИСЛО** - используй COUNT, SUM, AVG и т.д.
@@ -74,10 +74,14 @@ User Answer
    - Используй `::date` для приведения timestamp к дате
    - Формат дат: 'YYYY-MM-DD'
    - Для диапазона используй `BETWEEN` или `>=` и `<=`
+   - **Для фильтрации по времени (часам)** используй сравнение timestamp с указанием часового пояса UTC: `created_at >= 'YYYY-MM-DD HH:00:00+00:00'::timestamptz`
 6. **Если год не указан** - используй 2025 год (данные из ноября-декабря 2025)
 7. **Текущая дата**: {current_date}
+8. **Все строковые значения (ID, ссылки) ОБЯЗАТЕЛЬНО оборачивай в одинарные кавычки** - например: `creator_id = 'abc123'`
+9. **Для фильтрации video_snapshots по creator_id** → используй JOIN с таблицей videos
+10. **Время в базе данных хранится в UTC** - всегда указывай `+00:00` при фильтрации по времени
 
-#### Примеры запросов
+### Примеры запросов
 
 Вопрос: "Сколько всего видео есть в системе?"
 SQL: SELECT COUNT(id) FROM videos
@@ -85,8 +89,8 @@ SQL: SELECT COUNT(id) FROM videos
 Вопрос: "Сколько видео у креатора с id abc123 вышло с 1 ноября 2025 по 5 ноября 2025 включительно?"
 SQL: SELECT COUNT(id) FROM videos WHERE creator_id = 'abc123' AND video_created_at::date BETWEEN '2025-11-01' AND '2025-11-05'
 
-Вопрос: "Сколько видео набрало больше 100000 просмотров за всё время?"
-SQL: SELECT COUNT(id) FROM videos WHERE views_count > 100000
+Вопрос: "Сколько видео у креатора с id aca1061a9d324ecf8c3fa2bb32d7be63 набрали больше 10000 просмотров по итоговой статистике?"
+SQL: SELECT COUNT(id) FROM videos WHERE creator_id = 'aca1061a9d324ecf8c3fa2bb32d7be63' AND views_count > 10000
 
 Вопрос: "На сколько просмотров в сумме выросли все видео 28 ноября 2025?"
 SQL: SELECT COALESCE(SUM(delta_views_count), 0) FROM video_snapshots WHERE created_at::date = '2025-11-28'
@@ -97,11 +101,16 @@ SQL: SELECT COUNT(DISTINCT video_id) FROM video_snapshots WHERE created_at::date
 Вопрос: "Сколько лайков набрали все видео за период с 26 по 28 ноября?"
 SQL: SELECT COALESCE(SUM(delta_likes_count), 0) FROM video_snapshots WHERE created_at::date BETWEEN '2025-11-26' AND '2025-11-28'
 
-#### ВАЖНО
+Вопрос: "На сколько просмотров суммарно выросли все видео креатора с id cd87be38b50b4fdd8342bb3c383f3c7d в промежутке с 10:00 до 15:00 28 ноября 2025 года?"
+SQL: SELECT COALESCE(SUM(vs.delta_views_count), 0) FROM video_snapshots vs JOIN videos v ON vs.video_id = v.id WHERE v.creator_id = 'cd87be38b50b4fdd8342bb3c383f3c7d' AND vs.created_at >= '2025-11-28 10:00:00+00:00'::timestamptz AND vs.created_at < '2025-11-28 15:00:00+00:00'::timestamptz
+
+### ВАЖНО
 - Всегда используй COALESCE для SUM, чтобы вернуть 0 вместо NULL
 - Для подсчета уникальных видео используй COUNT(DISTINCT video_id)
 - Для фильтрации "больше N" используй оператор >
 - Для фильтрации "меньше N" используй оператор <
+- При фильтрации video_snapshots по creator_id используй JOIN: `FROM video_snapshots vs JOIN videos v ON vs.video_id = v.id WHERE v.creator_id = '...'`
+- Для временных диапазонов "с X:00 до Y:00" используй `>= 'YYYY-MM-DD X:00:00+00:00'::timestamptz AND < 'YYYY-MM-DD Y:00:00+00:00'::timestamptz` (не включая конечное время)
 
 ## Примеры
 
